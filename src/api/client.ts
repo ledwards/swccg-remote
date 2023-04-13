@@ -1,17 +1,17 @@
 import axios, { AxiosResponse } from 'axios';
 
-import * as dotenv from 'dotenv'
+import * as dotenv from 'dotenv';
 dotenv.config();
 const baseUrl = process.env.GEMP_SERVER_URL;
 
 export interface HeartbeatResponse {
-  status: number,
+  status: number
   completed: boolean
 }
 
 export interface LoginResponse {
-  userId: string,
-  status: number,
+  userId: string
+  status: number
   completed: boolean
 }
 
@@ -35,7 +35,6 @@ export default class ApiClient {
   }
 
   async _post(path: string, data: any): Promise<AxiosResponse> {
-    console.log(`${baseUrl}${path}`);
     try {
       const response: AxiosResponse = await axios.post(
         `${baseUrl}${path}`,

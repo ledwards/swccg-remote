@@ -1,3 +1,5 @@
+import User from './user';
+
 import ApiClient from './api/client';
 import * as dotenv from 'dotenv'
 dotenv.config();
@@ -5,9 +7,19 @@ dotenv.config();
 const baseUrl = process.env.GEMP_SERVER_URL;
 const apiClient = new ApiClient(baseUrl);
 
-console.log('Starting SWCCG Remote.');
-console.log(`Targeting gemp server at: ${baseUrl}.`);
+let user = new User();
 
-apiClient.getHeartbeat().then((response) => console.log(`Heartbeat: ${JSON.stringify(response)}`));
+async function main() {
+  console.log('> Starting SWCCG Remote.');
+  console.log(`> Targeting gemp server at: ${baseUrl}.\n`);
 
-apiClient.postLogin('test', 'test').then((response) => console.log(`Login: ${JSON.stringify(response)}`));
+  apiClient.getHeartbeat().then((response) => console.log(`Heartbeat: ${JSON.stringify(response)}`));
+
+  apiClient.postLogin('test', 'test')
+    .then((response) => { user.id = response.userId; return response; })
+    .then((response) => console.log(`Login: ${JSON.stringify(response)}`))
+    .then((_) => console.log(`UserId: ${user.id}`));
+  ;
+}
+
+main();
