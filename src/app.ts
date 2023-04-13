@@ -8,4 +8,6 @@ const apiClient = new ApiClient(baseUrl);
 console.log('Starting SWCCG Remote.');
 console.log(`Targeting gemp server at: ${baseUrl}.`);
 
-apiClient.getHeartbeat().then((heartbeat) => console.log(heartbeat));
+apiClient.getHeartbeat().then((response) => console.log(`Heartbeat: ${JSON.stringify(response)}`));
+
+apiClient.postLogin('test', 'test').then((response) => console.log(`Login: ${JSON.stringify(response)}`));
