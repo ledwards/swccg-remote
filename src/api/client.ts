@@ -6,6 +6,7 @@ import User from '../user';
 dotenv.config();
 const baseUrl = process.env.GEMP_SERVER_URL;
 
+// TODO: Responses are one interface (on AxiosResponse); return values per function are different
 export interface HeartbeatResponse {
   status: number
   completed: boolean
@@ -20,6 +21,11 @@ export interface LoginResponse {
 export interface ListDecksResponse {
   decks: any
   xml: any
+  status: number
+  completed: boolean
+}
+
+export interface SaveDeckResponse {
   status: number
   completed: boolean
 }
@@ -101,7 +107,6 @@ export default class ApiClient {
     const response: AxiosResponse = await this._get('/gemp-swccg-server/deck/list', user);
     const xml = response.data;
     let json = await xml2js.parseStringPromise(xml).then(function(result) {
-      console.log(result.decks);
       return result.decks;
     })
       .catch(function(error) {
@@ -112,6 +117,21 @@ export default class ApiClient {
     return ({
       decks: { dark: json.darkDeck, light: json.lightDeck },
       xml: response.data,
+      status: response.status,
+      completed: response.status == 200
+    });
+  }
+
+  // TODO: API should be cards: string[], sideboard: string[] - and then create deckstring
+  //       or maybe just a file? - maybe thats just a helper that loads a file to a deckstring
+  async saveDeck(name: string, contents: string, user: User): Promise<SaveDeckResponse> {
+    const data = {
+      deckName: name,
+      deckContents: contents
+    };
+    const response: AxiosResponse = await this._post('/gemp-swccg-server/deck', data, user);
+
+    return ({
       status: response.status,
       completed: response.status == 200
     });
