@@ -1,7 +1,3 @@
-// export type User = {
-// id: string
-// }
-
 export default class User {
   id: string;
 

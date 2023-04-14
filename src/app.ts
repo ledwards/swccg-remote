@@ -13,13 +13,15 @@ async function main() {
   console.log('> Starting SWCCG Remote.');
   console.log(`> Targeting gemp server at: ${baseUrl}.\n`);
 
-  apiClient.getHeartbeat().then((response) => console.log(`Heartbeat: ${JSON.stringify(response)}`));
+  await apiClient.getHeartbeat().then((response) => console.log(`Heartbeat: ${JSON.stringify(response)}`));
 
-  apiClient.postLogin('test', 'test')
+  await apiClient.postLogin('test', 'test')
     .then((response) => { user.id = response.userId; return response; })
     .then((response) => console.log(`Login: ${JSON.stringify(response)}`))
     .then((_) => console.log(`UserId: ${user.id}`));
-  ;
+
+  await apiClient.listDecks(user)
+    .then((response) => console.log(`List Decks: ${JSON.stringify(response)}`));
 }
 
 main();
