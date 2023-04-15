@@ -8,6 +8,7 @@ const baseUrl = process.env.GEMP_SERVER_URL;
 const apiClient = new ApiClient(baseUrl);
 
 let user = new User();
+let adminUser = new User();
 
 // TODO: There should be a test file that runs all these functions.
 
@@ -19,10 +20,16 @@ async function main() {
 
   await apiClient.getHeartbeat().then((response) => console.log(`Heartbeat: ${JSON.stringify(response)}`));
 
+  await apiClient.postLogin(process.env.ADMIN_USER, process.env.ADMIN_PASSWORD)
+    .then((response) => { adminUser.id = response.userId; return response; })
+    .then((response) => console.log(`Admin Login: ${JSON.stringify(response)}`))
+
+  await apiClient.startupServer(adminUser)
+    .then((response) => console.log(`Startup Server: ${JSON.stringify(response)}`))
+
   await apiClient.postLogin('test', 'test')
     .then((response) => { user.id = response.userId; return response; })
-    .then((response) => console.log(`Login: ${JSON.stringify(response)}`))
-    .then((_) => console.log(`UserId: ${user.id}`));
+    .then((response) => console.log(`User Login: ${JSON.stringify(response)}`))
 
   await apiClient.saveDeck('Sample Deck', deckContents, user)
     .then((response) => console.log(`Save Deck: ${JSON.stringify(response)}`));

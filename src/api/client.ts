@@ -30,6 +30,11 @@ export interface SaveDeckResponse {
   completed: boolean
 }
 
+export interface StartupServerResponse {
+  status: number
+  completed: boolean
+}
+
 export default class ApiClient {
   baseUrl: string;
 
@@ -136,4 +141,41 @@ export default class ApiClient {
       completed: response.status == 200
     });
   }
+
+  async startupServer(adminUser): Promise<StartupServerResponse> {
+    const response: AxiosResponse = await this._get('/gemp-swccg-server/admin/startup', adminUser);
+
+    return ({
+      status: response.status,
+      completed: response.status == 200
+    });
+  }
+
+  // GET gemp-swccg-server/admin/startup
+
+  // getDeck
+
+  // getDecks
+
+  // startGameSession
+
+  // updateGameState
+
+  // getGameCardModifiers - what is this?
+
+  // gameDecisionMade - what is this?
+
+  // sendChatMessage
+
+  // updateChat - what is this?
+
+  // getHall
+
+  // updateHall
+
+  // joinTable
+
+  // leaveTable
+
+  // register
 }
