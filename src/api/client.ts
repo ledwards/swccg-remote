@@ -56,6 +56,11 @@ export interface LeaveTableResponse {
   completed: boolean
 }
 
+export interface JoinTableResponse {
+  status: number
+  completed: boolean
+}
+
 export default class ApiClient {
   baseUrl: string;
 
@@ -214,7 +219,6 @@ export default class ApiClient {
     });
   }
 
-  // GetHallResponse
   async getHall(user: User): Promise<GetHallResponse> {
     const response: AxiosResponse = await this._get('/gemp-swccg-server/hall', {}, user);
     const xml = response.data;
@@ -243,15 +247,37 @@ export default class ApiClient {
     });
   }
 
-  // updateHall
+  async joinTable(tableId: string, deckName: string, user: User): Promise<JoinTableResponse> {
+    const data = {
+      deckName: deckName,
+      sampleDeck: false,
+    };
+    const response: AxiosResponse = await this._post(`/gemp-swccg-server/hall/${tableId}`, data, user);
 
-  // joinTable
-  // POST	/gemp-swccg-server/hall/{table-uuid}
-  // ...
+    return ({
+      status: response.status,
+      completed: response.status == 200
+    });
+  }
+
+  async playGame(tableId: string, deckName: string, user: User): Promise<JoinTableResponse> {
+    const data = {
+      deckName: deckName,
+      sampleDeck: false,
+    };
+    const response: AxiosResponse = await this._post(`/gemp-swccg-server/hall/${tableId}`, data, user);
+
+    return ({
+      status: response.status,
+      completed: response.status == 200
+    });
+  }
 
   // unknown name? posting actions
   // 	POST /gemp-swccg-server/game/41eb3ed7904e-8369-02d1-6906-4dbdde10
   // see: example-actions.txt
+
+  // updateHall
 
   // updateGameState
 
