@@ -51,6 +51,11 @@ export interface GetHallResponse {
   completed: boolean
 }
 
+export interface LeaveTableResponse {
+  status: number
+  completed: boolean
+}
+
 export default class ApiClient {
   baseUrl: string;
 
@@ -229,10 +234,16 @@ export default class ApiClient {
     });
   }
 
-  // updateHall
+  async leaveTable(tableId: string, user: User): Promise<LeaveTableResponse> {
+    const response: AxiosResponse = await this._post(`/gemp-swccg-server/hall/${tableId}/leave`, {}, user);
 
-  // leaveTable
-  // /gemp-swccg-server/hall/{uuid}/leave
+    return ({
+      status: response.status,
+      completed: response.status == 200
+    });
+  }
+
+  // updateHall
 
   // joinTable
   // POST	/gemp-swccg-server/hall/{table-uuid}

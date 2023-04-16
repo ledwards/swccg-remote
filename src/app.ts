@@ -45,7 +45,11 @@ async function main() {
     .then((response) => console.log(`Start Game Session: ${JSON.stringify(response)}`));
 
   await apiClient.getHall(user)
+    .then((response) => { user.currentGame = response['waitingTables'][0]; return response })
     .then((response) => console.log(`Get Hall: ${JSON.stringify(response)}`));
+
+  await apiClient.leaveTable(user.currentGame, user)
+    .then((response) => console.log(`Leave Table: ${JSON.stringify(response)}`));
 
 }
 
