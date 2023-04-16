@@ -40,6 +40,17 @@ export interface StartupServerResponse {
   completed: boolean
 }
 
+export interface StartGameSessionResponse {
+  status: number
+  completed: boolean
+}
+
+export interface GetHallResponse {
+  waitingTables: string[]
+  status: number
+  completed: boolean
+}
+
 export default class ApiClient {
   baseUrl: string;
 
@@ -182,18 +193,46 @@ export default class ApiClient {
     });
   }
 
-  // startGameSession
-  // POST /gemp-swccg-server/hall
-  // format	open
-  // deckName	Sample Deck
-  // sampleDeck	false
-  // tableDesc
-  // isPrivate	false
-  // participantId	null
+  async startGameSession(tableName: string, deckName: string, user: User): Promise<StartGameSessionResponse> {
+    const data = {
+      tableDesc: tableName,
+      deckName: deckName,
+      isPrivate: false,
+      format: 'open',
+      sampleDeck: false,
+    };
+    const response: AxiosResponse = await this._post('/gemp-swccg-server/hall', data, user);
 
-  // getHall
+    return ({
+      status: response.status,
+      completed: response.status == 200
+    });
+  }
+
+  // GetHallResponse
+  async getHall(user: User): Promise<GetHallResponse> {
+    const response: AxiosResponse = await this._get('/gemp-swccg-server/hall', {}, user);
+    const xml = response.data;
+    let json = await xml2js.parseStringPromise(xml).then(function(result) {
+      return result;
+    })
+      .catch(function(error) {
+        console.error(error);
+        return error;
+      });
+    const waitingTables = json['hall']['table'].filter(e => e['$']['status'] == 'WAITING').map(e => e['$']['id']);
+
+    return ({
+      waitingTables: waitingTables,
+      status: response.status,
+      completed: response.status == 200
+    });
+  }
 
   // updateHall
+
+  // leaveTable
+  // /gemp-swccg-server/hall/{uuid}/leave
 
   // joinTable
   // POST	/gemp-swccg-server/hall/{table-uuid}
@@ -202,8 +241,6 @@ export default class ApiClient {
   // unknown name? posting actions
   // 	POST /gemp-swccg-server/game/41eb3ed7904e-8369-02d1-6906-4dbdde10
   // see: example-actions.txt
-
-  // leaveTable
 
   // updateGameState
 
