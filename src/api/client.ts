@@ -20,12 +20,17 @@ export interface LoginResponse {
 
 export interface ListDecksResponse {
   decks: any
-  xml: any
   status: number
   completed: boolean
 }
 
 export interface SaveDeckResponse {
+  status: number
+  completed: boolean
+}
+
+export interface GetDeckResponse {
+  deck: string
   status: number
   completed: boolean
 }
@@ -42,14 +47,22 @@ export default class ApiClient {
     this.baseUrl = baseUrl;
   }
 
-  async _get(path: string, user?: User): Promise<AxiosResponse> {
+  async _get(path: string, data?: any, user?: User): Promise<AxiosResponse> {
     let headers = {};
+    let query = '';
+
     if (user) {
       headers['Cookie'] = `loggedUser=${user.id}`
     }
+
+    if (data) {
+      const params = new URLSearchParams(data).toString();
+      query = `?${params}`;
+    }
+
     try {
       const response: AxiosResponse = await axios.get(
-        `${baseUrl}${path}`,
+        `${baseUrl}${path}${query} `,
         { headers: headers }
       );
       return response;
@@ -71,7 +84,7 @@ export default class ApiClient {
 
     try {
       const response: AxiosResponse = await axios.post(
-        `${baseUrl}${path}`,
+        `${baseUrl}${path} `,
         data,
         { headers: headers }
       );
@@ -109,7 +122,7 @@ export default class ApiClient {
   }
 
   async listDecks(user: User): Promise<ListDecksResponse> {
-    const response: AxiosResponse = await this._get('/gemp-swccg-server/deck/list', user);
+    const response: AxiosResponse = await this._get('/gemp-swccg-server/deck/list', {}, user);
     const xml = response.data;
     let json = await xml2js.parseStringPromise(xml).then(function(result) {
       return result.decks;
@@ -121,7 +134,6 @@ export default class ApiClient {
 
     return ({
       decks: { dark: json.darkDeck, light: json.lightDeck },
-      xml: response.data,
       status: response.status,
       completed: response.status == 200
     });
@@ -142,8 +154,27 @@ export default class ApiClient {
     });
   }
 
+  async getDeck(name: string, user: User): Promise<GetDeckResponse> {
+    const response: AxiosResponse = await this._get('/gemp-swccg-server/deck', { deckName: name }, user);
+    const xml = response.data;
+    let json = await xml2js.parseStringPromise(xml).then(function(result) {
+      return result;
+    })
+      .catch(function(error) {
+        console.error(error);
+        return error;
+      });
+    const cards = json['deck']['card'].map((e) => e['$']['blueprintId']);
+
+    return ({
+      deck: cards,
+      status: response.status,
+      completed: response.status == 200
+    });
+  }
+
   async startupServer(adminUser): Promise<StartupServerResponse> {
-    const response: AxiosResponse = await this._get('/gemp-swccg-server/admin/startup', adminUser);
+    const response: AxiosResponse = await this._get('/gemp-swccg-server/admin/startup', {}, adminUser);
 
     return ({
       status: response.status,
@@ -151,13 +182,28 @@ export default class ApiClient {
     });
   }
 
-  // GET gemp-swccg-server/admin/startup
-
-  // getDeck
-
-  // getDecks
-
   // startGameSession
+  // POST /gemp-swccg-server/hall
+  // format	open
+  // deckName	Sample Deck
+  // sampleDeck	false
+  // tableDesc
+  // isPrivate	false
+  // participantId	null
+
+  // getHall
+
+  // updateHall
+
+  // joinTable
+  // POST	/gemp-swccg-server/hall/{table-uuid}
+  // ...
+
+  // unknown name? posting actions
+  // 	POST /gemp-swccg-server/game/41eb3ed7904e-8369-02d1-6906-4dbdde10
+  // see: example-actions.txt
+
+  // leaveTable
 
   // updateGameState
 
@@ -169,13 +215,4 @@ export default class ApiClient {
 
   // updateChat - what is this?
 
-  // getHall
-
-  // updateHall
-
-  // joinTable
-
-  // leaveTable
-
-  // register
 }
