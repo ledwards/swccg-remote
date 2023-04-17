@@ -2,7 +2,7 @@ import axios, { AxiosResponse } from 'axios';
 import xml2js from 'xml2js';
 
 import * as dotenv from 'dotenv';
-import User from '../user';
+import User from '../classes/user';
 dotenv.config();
 const baseUrl = process.env.GEMP_SERVER_URL;
 
@@ -66,6 +66,12 @@ export interface PlayTheGameResponse {
   completed: boolean
 }
 
+export interface GameActionResponse {
+  body: any
+  status: number
+  completed: boolean
+}
+
 export default class ApiClient {
   baseUrl: string;
 
@@ -105,18 +111,18 @@ export default class ApiClient {
     };
 
     if (user) {
-      headers['Cookie'] = `loggedUser=${user.id}`
+      headers['Cookie'] = `loggedUser=${user.id}`;
     }
 
     try {
       const response: AxiosResponse = await axios.post(
-        `${baseUrl}${path} `,
+        `${baseUrl}${path}`,
         data,
         { headers: headers }
       );
       return response;
     } catch (error) {
-      console.error(error);
+      // console.error(error);
       return error;
     }
   }
@@ -137,7 +143,6 @@ export default class ApiClient {
       participantId: null
     });
 
-    // { 'set-cookie': [ 'loggedUser=k8OhKeH6duV8cgb2y6gl' ] }
     const cookies = response.headers ? response.headers['set-cookie'] : [];
 
     return ({
@@ -265,21 +270,38 @@ export default class ApiClient {
     });
   }
 
-  // unknown name? posting actions
-  // 	POST /gemp-swccg-server/game/41eb3ed7904e-8369-02d1-6906-4dbdde10
-  // see: example-actions.txt
+  async gamePing(tableId: string, user: User): Promise<GameActionResponse> {
+    const response: AxiosResponse = await this._get(`/gemp-swccg-server/game/${tableId}`, {}, user);
 
+    return ({
+      body: response.data,
+      status: response.status,
+      completed: response.status == 200
+    });
+  }
+
+  async gameAction(tableId: string, decisionId: string, decisionValue: string, cn: number, user: User): Promise<GameActionResponse> {
+    const data = {
+      channelNumber: cn,
+      decisionId: decisionId,
+      decisionValue: decisionValue,
+    };
+
+    const response: AxiosResponse = await this._post(`/gemp-swccg-server/game/${tableId}`, data, user);
+
+    return ({
+      body: response.data,
+      status: response.status,
+      completed: response.status == 200
+    });
+  }
+
+  // Possible TODOs:
   // gameDecisionMade - what is this?
-
-
   // updateHall
-
   // updateGameState
-
   // getGameCardModifiers - what is this?
-
   // sendChatMessage
-
   // updateChat - what is this?
 
 }

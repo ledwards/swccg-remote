@@ -1,4 +1,4 @@
-import User from './user';
+import User from './classes/user';
 
 import ApiClient from './api/client';
 import * as dotenv from 'dotenv'
