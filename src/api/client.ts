@@ -72,6 +72,16 @@ export interface GameActionResponse {
   completed: boolean
 }
 
+export interface ExtendGameTimerResponse {
+  status: number
+  completed: boolean
+}
+
+export interface DisableActionTimerResponse {
+  status: number
+  completed: boolean
+}
+
 export default class ApiClient {
   baseUrl: string;
 
@@ -94,7 +104,7 @@ export default class ApiClient {
 
     try {
       const response: AxiosResponse = await axios.get(
-        `${baseUrl}${path}${query} `,
+        `${baseUrl}${path}${query}`,
         { headers: headers }
       );
       return response;
@@ -122,7 +132,7 @@ export default class ApiClient {
       );
       return response;
     } catch (error) {
-      // console.error(error);
+      console.error(error);
       return error;
     }
   }
@@ -195,6 +205,8 @@ export default class ApiClient {
         console.error(error);
         return error;
       });
+
+    // TODO: use the XML
     const cards = json['deck']['card'].map((e) => e['$']['blueprintId']);
 
     return ({
@@ -239,6 +251,7 @@ export default class ApiClient {
         console.error(error);
         return error;
       });
+
     const waitingTables = json['hall']['table'].filter(e => e['$']['status'] == 'WAITING').map(e => e['$']['id']);
 
     return ({
@@ -270,8 +283,43 @@ export default class ApiClient {
     });
   }
 
+  async extendGameTimer(tableId: string, n: number, user: User): Promise<ExtendGameTimerResponse> {
+    const data = {
+      minutesToExtend: n,
+    };
+
+    const response: AxiosResponse = await this._post(`/gemp-swccg-server/game/${tableId}/extendGameTimer`, data, user);
+    // console.log(JSON.stringify(response));
+
+    return ({
+      status: response.status,
+      completed: response.status == 200
+    });
+  }
+
+  async extendBothGameTimers(tableId: string, n: number, user1: User, user2: User): Promise<ExtendGameTimerResponse> {
+    const response1 = await this.extendGameTimer(tableId, n, user1);
+    const response2 = await this.extendGameTimer(tableId, n, user2);
+    return response2;
+  }
+
+  async disableActionTimer(tableId: string, user: User): Promise<DisableActionTimerResponse> {
+    const response: AxiosResponse = await this._post(`/gemp-swccg-server/game/${tableId}/disableActionTimer`, null, user);
+
+    return ({
+      status: response.status,
+      completed: response.status == 200
+    });
+  }
+
+  async disableBothActionTimers(tableId: string, user1: User, user2: User): Promise<DisableActionTimerResponse> {
+    const response1 = await this.disableActionTimer(tableId, user1);
+    const response2 = await this.disableActionTimer(tableId, user2);
+    return response2;
+  }
+
   async gamePing(tableId: string, user: User): Promise<GameActionResponse> {
-    const response: AxiosResponse = await this._get(`/gemp-swccg-server/game/${tableId}`, {}, user);
+    const response: AxiosResponse = await this._get(`/gemp-swccg-server/game/${tableId}`, null, user);
 
     return ({
       body: response.data,

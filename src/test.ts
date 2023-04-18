@@ -1,4 +1,5 @@
 import User from './classes/user';
+import Game from './classes/game';
 
 import ApiClient from './api/client';
 import * as dotenv from 'dotenv'
@@ -9,6 +10,7 @@ const apiClient = new ApiClient(baseUrl);
 
 let lsPlayerUser = new User();
 let dsPlayerUser = new User();
+let currentGame = new Game();
 let adminUser = new User();
 const lsDeckName = 'Obimuning';
 const dsDeckName = 'Thrawn';
@@ -33,11 +35,11 @@ async function main() {
 
   await apiClient.postLogin('test1', 'test')
     .then((response) => { lsPlayerUser.id = response.userId; return response; })
-    .then((response) => console.log(`User1 Login: ${JSON.stringify(response)}`))
+    .then((response) => console.log(`User1 (${lsPlayerUser.id}) Login: ${JSON.stringify(response)}`))
 
   await apiClient.postLogin('test2', 'test')
     .then((response) => { dsPlayerUser.id = response.userId; return response; })
-    .then((response) => console.log(`User2 Login: ${JSON.stringify(response)}`))
+    .then((response) => console.log(`User2 (${dsPlayerUser.id} Login: ${JSON.stringify(response)}`))
 
   await apiClient.saveDeck(lsDeckName, lsDeckContents, lsPlayerUser)
     .then((response) => console.log(`Save Deck (LS): ${JSON.stringify(response)}`));
@@ -55,21 +57,21 @@ async function main() {
     .then((response) => console.log(`Start Game Session: ${JSON.stringify(response)}`));
 
   await apiClient.getHall(lsPlayerUser)
-    .then((response) => { lsPlayerUser.currentGame = response['waitingTables'][0]; return response })
+    .then((response) => { currentGame.id = response['waitingTables'][0]; return response })
     .then((response) => console.log(`Get Hall: ${JSON.stringify(response)}`));
 
-  await apiClient.leaveTable(lsPlayerUser.currentGame, lsPlayerUser)
+  await apiClient.joinTable(currentGame.id, dsDeckName, dsPlayerUser)
+    .then((response) => console.log(`Join Table (${currentGame.id}): ${JSON.stringify(response)}`));
+
+  await apiClient.extendBothGameTimers(currentGame.id, 30, dsPlayerUser, lsPlayerUser)
+    .then((response) => console.log(`ExtendGameTimer: ${JSON.stringify(response)}`));
+
+  await apiClient.disableBothActionTimers(currentGame.id, dsPlayerUser, lsPlayerUser)
+    .then((response) => console.log(`Disable Both Action Timers: ${JSON.stringify(response)} `));
+
+  await apiClient.leaveTable(currentGame.id, lsPlayerUser)
     .then((response) => console.log(`Leave Table: ${JSON.stringify(response)}`));
 
-  await apiClient.startGameSession(tableName, lsDeckName, lsPlayerUser)
-    .then((response) => console.log(`Start Game Session: ${JSON.stringify(response)}`));
-
-  await apiClient.getHall(lsPlayerUser)
-    .then((response) => { lsPlayerUser.currentGame = response['waitingTables'][0]; return response })
-    .then((response) => console.log(`Get Hall: ${JSON.stringify(response)}`));
-
-  await apiClient.joinTable(lsPlayerUser.currentGame, dsDeckName, dsPlayerUser)
-    .then((response) => console.log(`Join Table: ${JSON.stringify(response)}`));
 }
 
 main();
