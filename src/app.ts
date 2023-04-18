@@ -54,7 +54,7 @@ async function setup() {
 
 function valueFromAttr(val: any) {
   // this is so fucking stupid
-  return val.toString().split('=')[1].split('"')[1];
+  return val ? val.toString().split('=')[1].split('"')[1] : null;
 }
 
 class ActionOptions {
@@ -72,8 +72,11 @@ class ActionOptions {
 class DecisionOptions {
   id: string
   channelNumber: number
-  actionOptions: ActionOptions[]
   decisionType: string
+  actionOptions: ActionOptions[]
+  multipleChoiceOptions: string[]
+  min: string
+  max: string
 
   constructor(id: string, channelNumber: number, decisionType: string) {
     this.id = id;
@@ -105,11 +108,17 @@ function parseDecisionOptions(xml: string) {
     const actionTexts = xpath.select(`//ge[@id=${id}]/parameter[@name='actionText']/@value`, doc).map(attr => valueFromAttr(attr.valueOf()));
     const actionIds = xpath.select(`//ge[@id=${id}]/parameter[@name='actionId']/@value`, doc).map(attr => valueFromAttr(attr.valueOf()));
     const cardIds = xpath.select(`//ge[@id=${id}]/parameter[@name='cardId']/@value`, doc).map(attr => valueFromAttr(attr.valueOf()));
+    const multipleChoiceOptions = xpath.select(`//ge[@id=${id}]/parameter[@name='results']/@value`, doc).map(attr => valueFromAttr(attr.valueOf()));
+    const min = valueFromAttr(xpath.select1(`//ge[@id=${id}]/parameter[@name='min']/@value`, doc));
+    const max = valueFromAttr(xpath.select1(`//ge[@id=${id}]/parameter[@name='max']/@value`, doc));
 
     // TODO: I guess right here, maybe do the Integer option thing.
 
     const decisionOption = new DecisionOptions(id, Number(channelNumber), String(decisionType));
     decisionOption.actionOptions = cardIds.map((_, j) => new ActionOptions(actionIds[j], actionTexts[j], cardIds[j]));
+    decisionOption.multipleChoiceOptions = multipleChoiceOptions;
+    decisionOption.min = min;
+    decisionOption.max = max;
 
     return decisionOption;
   });
@@ -125,22 +134,25 @@ function makeDecision(decisionOptionsList: DecisionOptions[]) {
   switch (decisionOption.decisionType) {
     case "CARD_ACTION_CHOICE":
       value = actionOption ? actionOption.id : '';
+      console.log(`CARD_ACTION_CHOICE: Gonna pick ${decisionOption.id}|${value}`);
       break;
     case "CARD_SELECTION":
       value = actionOption ? actionOption.cardId : '';
+      console.log(`CARD_SELECTION: Gonna pick ${decisionOption.id}|${value}`);
       break;
     case "ARBITRARY_CARDS":
+      // TODO: only select selectable cards
       value = actionOption ? actionOption.cardId : '';
+      console.log(`ARBITRARY_CARDS: Gonna pick ${decisionOption.id}|${value}`);
       break;
     case "INTEGER":
-      // TODO: This!
-      // value = String(Math.floor(Math.random() * (actionOption.max - actionOption.min + 1) + actionOption.min));
-      // or: defaultValue
+      value = String(Math.floor(Math.random() * (Number(decisionOption.max) - Number(decisionOption.min) + 1)) + Number(decisionOption.min));
+      console.log(`INTEGER: Gonna pick ${decisionOption.id}|${value}`);
       break;
     case "MULTIPLE_CHOICE":
-      // TODO: This!
-      // value = String(Math.floor(Math.random() * (actionOption.max - actionOption.min + 1) + actionOption.min));
-      // or: defaultValue
+      const randomIndex = Math.floor(Math.random() * decisionOption.multipleChoiceOptions.length);
+      value = decisionOption.multipleChoiceOptions[randomIndex];
+      console.log(`MULTIPLE_CHOICE: Gonna pick ${decisionOption.id}|${value}`);
       break;
     default:
       value = actionOption ? actionOption.id : '';
@@ -169,7 +181,7 @@ async function gameLoop(game: Game, activePlayer: User, inactivePlayer: User) {
     }
     await gameLoop(game, inactivePlayer, activePlayer);
 
-  }, 1000);
+  }, 500);
 };
 
 async function passAction(game: Game, playerUser: User) {
@@ -195,7 +207,6 @@ async function main() {
     currentGame = new Game(process.env.GAME_ID);
     dsPlayerUser = new User(process.env.DS_PLAYER_USER_ID);
     lsPlayerUser = new User(process.env.LS_PLAYER_USER_ID);
-
     console.log(`> Joining existing game: ${currentGame.id} with ${dsPlayerUser.id} (DS) ${lsPlayerUser.id} (LS) \n`);
   }
 
@@ -204,18 +215,6 @@ async function main() {
     .then((response) => console.log(`Extend Both Game Timers: ${JSON.stringify(response)} `));
 
   gameLoop(currentGame, dsPlayerUser, lsPlayerUser);
-
-  // TODO:
-  // BUG: Get client.ts to use XML instead of JSON for GameHall methods
-  // 1. Setup
-  // 2. Launch DS agent
-  // 3. Launch LS agent
-  // Agents loop forever, deciding or polling
-
-  // let game = new Game('', 0);
-  // let dsPlayer = new User('');
-  // let lsPlayer = new User('');
-
 }
 
 main();
